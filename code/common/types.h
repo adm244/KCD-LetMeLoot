@@ -46,6 +46,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define NOINLINE __declspec(noinline)
 #define INLINE __inline
 
+#ifdef __cplusplus
+#define external extern "C"
+#else
+#define external extern
+#endif
+
 #define assert_size(obj, size) static_assert(sizeof(obj) == size, "Size of " #obj " should be " #size)
 
 typedef char i8;

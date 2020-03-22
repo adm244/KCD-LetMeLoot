@@ -114,7 +114,7 @@ OTHER DEALINGS IN THE SOFTWARE.
     
     We can also use padding in "C_UIMenuEvents" at [0x6A-0x6F] (6 bytes) to store our data
     
-  3) Hook inventory close (hook RVA:008C6648)
+  3) Hook inventory close (hook RVA:008C5ED4)
     There's a call to LUA function named "OnInventoryClosed" which is called at closing inventory
     Call is made from a subclass (offset 0x60) of "C_ScriptBindActor" virtual function (0x08)
     This function gets a "CScriptTable" object and calls "CScriptTable::CallFunction"(?) with
@@ -129,14 +129,107 @@ OTHER DEALINGS IN THE SOFTWARE.
     Hooking this function is a bit problematic, have to overwrite 2 function calls (doable)
     "C_UIMenuEvents::OnClosedInventory" (RVA:008C6648)
     
+    Nah... Let's hook "C_UIMenuEvents::NotifyInventoryClosed" (RVA:008C5ED4)
+    Though it's being called from a loading screen, but shouldn't be a problem
+    
     We probably have to store some info in "C_UIMenuEvents" so we know should we unpause or not
 */
 
 #include <windows.h>
 
 #include "types.h"
+#include "detours.cpp"
+
+internal char *baseModuleName = "whgame.dll";
+external void *baseAddress = 0;
+
+external void *OpenInventory_Address = 0;
+external void *NotifyInventoryClosed_Address = 0;
+
+external void OpenInventory_Hook();
+external void NotifyInventoryClosed_Hook();
+
+enum InventoryMode {
+  E_IM_Player = 0,
+  E_IM_Map = 1,
+  E_IM_Store = 2,
+  E_IM_QuestReward = 3,
+  E_IM_QuestDelivery = 4,
+  E_IM_Loot = 5,
+  E_IM_Shop = 6,
+  E_IM_Pickpocket = 7,
+  E_IM_StoreReadOnly = 8,
+  E_IM_Filter = 10,
+  E_IM_Repair = 11,
+  E_IM_Sharpening = 14
+};
+
+#pragma pack(push, 8)
+
+struct C_UIMenuEvents {
+  void *vtable;
+};
+
+struct C_Actor {
+  void *vtable;
+};
+
+#pragma pack(pop)
+
+external void FASTCALL C_UIMenuEvents_OpenInventory
+(C_UIMenuEvents *ptr, C_Actor *actor, InventoryMode mode, u64 unk04, u64 inventoryID, char *filter)
+{
+  switch (mode) {
+    case E_IM_Player:
+    case E_IM_Map:
+      return;
+    
+    default: {
+      //TODO(adm244): pause game
+    } return;
+  }
+}
+
+external void FASTCALL C_UIMenuEvents_NotifyInventoryClosed
+(C_UIMenuEvents *ptr)
+{
+  //TODO(adm244): unpause game
+}
+
+internal INLINE void * RVA(u64 offset)
+{
+  return (void *)((u64)baseAddress + offset);
+}
+
+internal bool Initialize()
+{
+  OpenInventory_Address = RVA(0x008C7F8C);
+  NotifyInventoryClosed_Address = RVA(0x008C5ED4);
+  
+  if (!WriteDetour64(OpenInventory_Address, &OpenInventory_Hook, 1)) {
+    return false;
+  }
+  
+  if (!WriteDetour64(NotifyInventoryClosed_Address, &NotifyInventoryClosed_Hook, 3)) {
+    return false;
+  }
+  
+  return true;
+}
 
 BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
 {
+  if (reason == DLL_PROCESS_ATTACH) {
+    baseAddress = (void *)GetModuleHandle(baseModuleName);
+    if (!baseAddress) {
+      OutputDebugStringA("GetModuleHandle returned NULL");
+      return FALSE;
+    }
+    
+    if (!Initialize()) {
+      return FALSE;
+    }
+  }
+  
   return TRUE;
 }

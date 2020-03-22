@@ -9,11 +9,16 @@ SET files=%source%\main.cpp
 SET libname=letmeloot
 SET common=%source%\common
 
+SET asmfiles=%source%\hooks.asm
+SET objfiles=hooks.obj
+SET masm_args=/c /nologo %asmfiles%
+
 SET debug=/Od /Zi /DDebug /nologo /LDd
 SET release=/O2 /WX /nologo /LD
-SET args=%debug% /I%common% /Fe%libname% %files% /link %libs%
+SET args=%debug% /I%common% /Fe%libname% %files% /link %objfiles% %libs%
 
 SET compiler=CL
+SET masm=ML64
 REM ###########################
 
 SET edit=edit
@@ -29,12 +34,20 @@ ECHO: Build started...
 
 IF NOT EXIST "%bin%" MKDIR "%bin%"
 PUSHD "%bin%"
-"%compiler%" %args%
-POPD
 
+"%masm%" %masm_args%
+IF NOT [%ERRORLEVEL%]==[0] GOTO AssemblyFailed
+
+"%compiler%" %args%
 IF NOT [%ERRORLEVEL%]==[0] GOTO CompileFailed
 
+POPD
+
 ECHO: Build finished.
+GOTO:EOF
+
+:AssemblyFailed
+ECHO:Assembly failed (%ERRORLEVEL% returned).
 GOTO:EOF
 
 :CompileFailed

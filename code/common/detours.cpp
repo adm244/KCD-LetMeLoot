@@ -25,6 +25,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 //IMPORTANT(adm244): SCRATCH VERSION JUST TO GET IT UP WORKING
 
+//TODO(adm244): this lib is a mess, laddie...
+
 #ifndef _DETOURS_CPP
 #define _DETOURS_CPP
 
@@ -32,6 +34,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <psapi.h>
 
 #define DETOUR_LENGTH 5
+#define DETOUR_LENGTH_X64 12
 
 internal void * FindWString(void *beginAddress, void *endAddress, wchar_t *str)
 {
@@ -113,28 +116,10 @@ internal void * RIPRel32(void *src, u8 opcode_length)
   return (void *)(rip + offset);
 }
 
-/*internal i8 RIPRelOffset8(void *rip, void *dest)
-{
-  return (i8)((i32)dest - (i32)rip);
-}*/
-
 internal i32 RIPRelOffset32(void *rip, void *dest)
 {
   return (i32)dest - (i32)rip;
 }
-
-/// Assembles a relative 8-bit jump
-/*internal void * JumpRel8(void *src, void *dest)
-{
-  u8 *p = (u8 *)src;
-  u8 *pend = (u8 *)(p + 2);
-
-  // assemble jmp dest
-  p[0] = 0xEB;
-  *((i8 *)(&p[1])) = RIPRelOffset8(pend, dest);
-  
-  return pend;
-}*/
 
 /// Assembles a relative 32-bit jump
 internal void * JumpRel32(void *src, void *dest)
@@ -147,13 +132,34 @@ internal void * JumpRel32(void *src, void *dest)
   *((i32 *)(&p[1])) = RIPRelOffset32(pend, dest);
   
   return pend;
+  
+}
+
+/// Assembles an absolute indirect 64-bit jump
+internal void * JumpAbsInd64(void *src, void *dest)
+{
+  u8 *p = (u8 *)src;
+  u8 *pend = (u8 *)(p + DETOUR_LENGTH_X64);
+
+  // assemble mov rax, qword ptr [dest]
+  p[0] = 0x48;
+  p[1] = 0xB8;
+  *((u64 *)(&p[2])) = (u64)dest;
+  
+  // assemble jmp rax
+  p[10] = 0xFF;
+  p[11] = 0xE0;
+  
+  return pend;
 }
 
 /// Writes a detour to dest at src nop'ing extra space
 internal bool WriteDetour(void *src, void *dest, int padding)
 {
   DWORD oldProtection;
-  BOOL result = VirtualProtect(src, DETOUR_LENGTH, PAGE_EXECUTE_READWRITE, &oldProtection);
+  //NOTE(adm244): funny how this bug never caused any problems since min length is 4KB by default anyway
+  // it just never crossed that boundary, but still, let's be on a safe side and add padding size
+  BOOL result = VirtualProtect(src, DETOUR_LENGTH + padding, PAGE_EXECUTE_READWRITE, &oldProtection);
   if (!result) {
     return false;
   }
@@ -164,7 +170,7 @@ internal bool WriteDetour(void *src, void *dest, int padding)
     ((u8 *)src)[i] = 0x90;
   }
   
-  result = VirtualProtect(src, DETOUR_LENGTH, oldProtection, &oldProtection);
+  result = VirtualProtect(src, DETOUR_LENGTH + padding, oldProtection, &oldProtection);
   if (!result) {
     return false;
   }
@@ -172,27 +178,26 @@ internal bool WriteDetour(void *src, void *dest, int padding)
   return true;
 }
 
-/*internal bool HotPatch(void *src, void *dest, void **originalFunc)
+internal bool WriteDetour64(void *src, void *dest, int padding)
 {
   DWORD oldProtection;
-  BOOL result = VirtualProtect(src, DETOUR_LENGTH, PAGE_EXECUTE_READWRITE, &oldProtection);
+  BOOL result = VirtualProtect(src, DETOUR_LENGTH_X64 + padding, PAGE_EXECUTE_READWRITE, &oldProtection);
   if (!result) {
     return false;
   }
   
-  void *relDest = (void *)((u8)src - 5);
+  JumpAbsInd64(src, dest);
   
-  JumpRel32(relDest, dest);
-  JumpRel8(src, relDest);
+  for (int i = DETOUR_LENGTH_X64; i < (DETOUR_LENGTH_X64 + padding); ++i) {
+    ((u8 *)src)[i] = 0x90;
+  }
   
-  *(u32 *)originalFunc = (u32)src + 2;
-  
-  result = VirtualProtect(src, DETOUR_LENGTH, oldProtection, &oldProtection);
+  result = VirtualProtect(src, DETOUR_LENGTH_X64 + padding, oldProtection, &oldProtection);
   if (!result) {
     return false;
   }
   
   return true;
-}*/
+}
 
 #endif

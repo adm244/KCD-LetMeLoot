@@ -143,74 +143,60 @@ OTHER DEALINGS IN THE SOFTWARE.
 internal char *baseModuleName = "whgame.dll";
 external void *baseAddress = 0;
 
-external void *OpenInventory_Address = 0;
-external void *NotifyInventoryClosed_Address = 0;
-
-external void OpenInventory_Hook();
-external void NotifyInventoryClosed_Hook();
-
-enum InventoryMode {
-  E_IM_Player = 0,
-  E_IM_Map = 1,
-  E_IM_Store = 2,
-  E_IM_QuestReward = 3,
-  E_IM_QuestDelivery = 4,
-  E_IM_Loot = 5,
-  E_IM_Shop = 6,
-  E_IM_Pickpocket = 7,
-  E_IM_StoreReadOnly = 8,
-  E_IM_Filter = 10,
-  E_IM_Repair = 11,
-  E_IM_Sharpening = 14
-};
-
-#pragma pack(push, 8)
-
-struct C_UIMenuEvents {
-  void *vtable;
-};
-
-struct C_Actor {
-  void *vtable;
-};
-
-#pragma pack(pop)
-
-external void FASTCALL C_UIMenuEvents_OpenInventory
-(C_UIMenuEvents *ptr, C_Actor *actor, InventoryMode mode, u64 unk04, u64 inventoryID, char *filter)
-{
-  switch (mode) {
-    case E_IM_Player:
-    case E_IM_Map:
-      return;
-    
-    default: {
-      //TODO(adm244): pause game
-    } return;
-  }
-}
-
-external void FASTCALL C_UIMenuEvents_NotifyInventoryClosed
-(C_UIMenuEvents *ptr)
-{
-  //TODO(adm244): unpause game
-}
+#include "native_types.h"
+#include "hooks.cpp"
 
 internal INLINE void * RVA(u64 offset)
 {
+  if (!baseAddress) {
+    return 0;
+  }
+  
   return (void *)((u64)baseAddress + offset);
 }
 
-internal bool Initialize()
+internal bool DefineAddresses()
 {
-  OpenInventory_Address = RVA(0x008C7F8C);
-  NotifyInventoryClosed_Address = RVA(0x008C5ED4);
+  GetWHStaticsBundle = (GetWHStaticsBundle_t)RVA(0x007D7B2C);
+  if (!GetWHStaticsBundle) {
+    return false;
+  }
   
+  OpenInventory_Address = RVA(0x008C7F8C);
+  if (!OpenInventory_Address) {
+    return false;
+  }
+  
+  NotifyInventoryClosed_Address = RVA(0x008C5ED4);
+  if (!NotifyInventoryClosed_Address) {
+    return false;
+  }
+  
+  return true;
+}
+
+internal bool InjectHooks()
+{
   if (!WriteDetour64(OpenInventory_Address, &OpenInventory_Hook, 1)) {
     return false;
   }
   
   if (!WriteDetour64(NotifyInventoryClosed_Address, &NotifyInventoryClosed_Hook, 3)) {
+    return false;
+  }
+  
+  return true;
+}
+
+internal bool Initialize()
+{
+  if (!DefineAddresses()) {
+    OutputDebugStringA("DefineAddresses failed");
+    return false;
+  }
+  
+  if (!InjectHooks()) {
+    OutputDebugStringA("InjectHooks failed");
     return false;
   }
   

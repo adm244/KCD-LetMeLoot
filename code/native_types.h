@@ -79,7 +79,7 @@ struct CCryActionVFTable {
   void *unk58;
   void *PostUpdate; // 0x60
   void *unk68;
-  CCryAction_PauseGame_t *PauseGame; // 0x70
+  CCryAction_PauseGame_t PauseGame; // 0x70
   void *unk78;
   void *unk80;
   void *unk88;

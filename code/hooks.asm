@@ -39,9 +39,12 @@ extern C_UIMenuEvents_NotifyInventoryClosed : proc
     push r8
     push r9
     
-    sub rsp, 32
+    ;NOTE(adm244): a function should always align stack on 16-bytes boundary (x64 ABI)
+    ; since return address (pushed by call instruction) is 8-bytes it makes stack unaligned
+    ; so callee adds extra 8 bytes of padding to make it aligned again
+    sub rsp, 32 + 8
     call C_UIMenuEvents_OpenInventory
-    add rsp, 32
+    add rsp, 32 + 8
     
     pop r9
     pop r8
@@ -66,9 +69,9 @@ extern C_UIMenuEvents_NotifyInventoryClosed : proc
   NotifyInventoryClosed_Hook proc
     push rcx
     
-    sub rsp, 8
+    sub rsp, 32
     call C_UIMenuEvents_NotifyInventoryClosed
-    add rsp, 8
+    add rsp, 32
     
     pop rcx
     

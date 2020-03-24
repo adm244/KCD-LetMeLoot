@@ -35,15 +35,19 @@ external void OpenInventory_Hook();
 external void NotifyInventoryClosed_Hook();
 
 external void FASTCALL C_UIMenuEvents_OpenInventory
-(C_UIMenuEvents *ptr, C_Actor *actor, InventoryMode mode, u64 unk04, u64 inventoryID, char *filter)
+(C_UIMenuEvents *ptr, C_Actor *actor, InventoryMode mode)
 {
   switch (mode) {
     case E_IM_Player:
     case E_IM_Map:
+    case E_IM_Shop:
       return;
     
     default: {
-      //TODO(adm244): pause game
+      WHStaticsBundle *bundle = GetWHStaticsBundle();
+      CCryAction *action = bundle->cryAction;
+      
+      action->vtable->PauseGame(action, true, 7, 0);
     } return;
   }
 }
@@ -51,7 +55,10 @@ external void FASTCALL C_UIMenuEvents_OpenInventory
 external void FASTCALL C_UIMenuEvents_NotifyInventoryClosed
 (C_UIMenuEvents *ptr)
 {
-  //TODO(adm244): unpause game
+  WHStaticsBundle *bundle = GetWHStaticsBundle();
+  CCryAction *action = bundle->cryAction;
+  
+  action->vtable->PauseGame(action, false, 7, 0);
 }
 
 #endif

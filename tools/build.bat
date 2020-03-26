@@ -4,7 +4,7 @@ REM https://github.com/adm244/cdev
 
 SETLOCAL
 REM [customize those variables]
-SET libs=kernel32.lib
+SET libs=kernel32.lib version.lib
 SET files=%source%\main.cpp
 SET libname=letmeloot
 SET common=%source%\common
@@ -15,7 +15,7 @@ SET masm_args=/c /nologo %asmfiles%
 
 SET debug=/Od /Zi /DDebug /nologo /LDd
 SET release=/O2 /WX /nologo /LD
-SET args=%debug% /I%common% /Fe%libname% %files% /link %objfiles% %libs%
+SET args=%release% /I%common% /Fe%libname% %files% /link %objfiles% %libs%
 
 SET compiler=CL
 SET masm=ML64
@@ -30,7 +30,7 @@ IF [%1]==[] GOTO Build
 GOTO Error
 
 :Build
-ECHO: Build started...
+ECHO:Build started...
 
 IF NOT EXIST "%bin%" MKDIR "%bin%"
 PUSHD "%bin%"
@@ -43,7 +43,7 @@ IF NOT [%ERRORLEVEL%]==[0] GOTO CompileFailed
 
 POPD
 
-ECHO: Build finished.
+ECHO:Build finished.
 GOTO:EOF
 
 :AssemblyFailed

@@ -38,17 +38,18 @@ external void FASTCALL C_UIMenuEvents_OpenInventory
 (C_UIMenuEvents *ptr, C_Actor *actor, InventoryMode mode)
 {
   switch (mode) {
-    case E_IM_Player:
-    case E_IM_Map:
-    case E_IM_Shop:
-      return;
-    
-    default: {
+    case E_IM_Loot:
+    case E_IM_Filter:
+    case E_IM_Store:
+    case E_IM_StoreReadOnly: {
       WHStaticsBundle *bundle = GetWHStaticsBundle();
       CCryAction *action = bundle->cryAction;
       
       action->vtable->PauseGame(action, true, 7, 0);
     } return;
+    
+    default:
+      return;
   }
 }
 

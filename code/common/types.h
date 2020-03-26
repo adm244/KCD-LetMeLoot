@@ -45,6 +45,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define NAKED __declspec(naked)
 #define NOINLINE __declspec(noinline)
 #define INLINE __inline
+#define DLLEXPORT __declspec(dllexport)
 
 #ifdef __cplusplus
 #define external extern "C"

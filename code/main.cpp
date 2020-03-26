@@ -136,6 +136,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include <windows.h>
+#include <assert.h>
+#include <malloc.h>
 
 #include "types.h"
 #include "detours.cpp"
@@ -145,6 +147,18 @@ external void *baseAddress = 0;
 
 #include "native_types.h"
 #include "hooks.cpp"
+
+enum GameVersion {
+  Game_Unknown = 0,
+  Game_NotSupported,
+  Game_194,
+  Game_193,
+  Game_192,
+  //Game_191_390CC,
+  //Game_190
+};
+
+internal GameVersion gameVersion = Game_Unknown;
 
 internal INLINE void * RVA(u64 offset)
 {
@@ -157,20 +171,35 @@ internal INLINE void * RVA(u64 offset)
 
 internal bool DefineAddresses()
 {
-  GetWHStaticsBundle = (GetWHStaticsBundle_t)RVA(0x007D7B2C);
-  if (!GetWHStaticsBundle) {
-    return false;
+  switch (gameVersion) {
+    case Game_194: {
+      GetWHStaticsBundle = (GetWHStaticsBundle_t)RVA(0x007D7B2C);
+      OpenInventory_Address = RVA(0x008C7F8C);
+      NotifyInventoryClosed_Address = RVA(0x008C5ED4);
+    } break;
+    
+    case Game_193: {
+      GetWHStaticsBundle = (GetWHStaticsBundle_t)RVA(0x008A2AEC);
+      OpenInventory_Address = RVA(0x008079EC);
+      NotifyInventoryClosed_Address = RVA(0x00805934);
+    } break;
+    
+    case Game_192: {
+      GetWHStaticsBundle = (GetWHStaticsBundle_t)RVA(0x008F9228);
+      OpenInventory_Address = RVA(0x0093E5C4);
+      NotifyInventoryClosed_Address = RVA(0x0093C5A4);
+    } break;
+    
+    default:
+      return false;
   }
   
-  OpenInventory_Address = RVA(0x008C7F8C);
-  if (!OpenInventory_Address) {
+  if (!GetWHStaticsBundle)
     return false;
-  }
-  
-  NotifyInventoryClosed_Address = RVA(0x008C5ED4);
-  if (!NotifyInventoryClosed_Address) {
+  if (!OpenInventory_Address)
     return false;
-  }
+  if (!NotifyInventoryClosed_Address)
+    return false;
   
   return true;
 }
@@ -188,8 +217,66 @@ internal bool InjectHooks()
   return true;
 }
 
+internal GameVersion GetGameVersion()
+{
+  GameVersion result = Game_Unknown;
+  
+  const char *filename = "KingdomCome.exe";
+  u32 infoSize = GetFileVersionInfoSizeA(filename, 0);
+  if (infoSize > 0) {
+    void *buffer = 0;
+    
+    __try { buffer = _alloca(infoSize); }
+    __except(GetExceptionCode() == STATUS_STACK_OVERFLOW) {
+      return result;
+    }
+    
+    char *productVersion = 0;
+    UINT productVersionSize = 0;
+    if (GetFileVersionInfoA(filename, 0, infoSize, buffer)) {
+      //FIX(adm244): search for all available lang pages, not just "000904b0", whatever that is
+      if (VerQueryValueA(buffer, TEXT("\\StringFileInfo\\000904b0\\ProductVersion"), (void **)&productVersion, &productVersionSize)) {
+        //NOTE(adm244): WH forgot to change product version for 1.9.5, so it's shown as 1.9.4
+        // not a big deal here, since RVA's are identical
+        if (strcmp(productVersion, "1.9.4.0") == 0) {
+          result = Game_194;
+        } else if (strcmp(productVersion, "1.9.3.0") == 0) {
+          result = Game_193;
+        } else if (strcmp(productVersion, "1.9.0.0") == 0) {
+          //NOTE(adm244): yeah, they forgot to change it, again...
+          // this time RVA's are different, oh well...
+          result = Game_192;
+        }
+      }
+    }
+  }
+  
+  assert(result != Game_Unknown);
+  return result;
+}
+
 internal bool Initialize()
 {
+  baseAddress = (void *)GetModuleHandle(baseModuleName);
+  if (!baseAddress) {
+    OutputDebugStringA("GetModuleHandle returned NULL");
+    return false;
+  }
+  
+  gameVersion = GetGameVersion();
+  switch (gameVersion) {
+    case Game_Unknown: {
+      OutputDebugStringA("Unknown game version");
+    } return false;
+    
+    case Game_NotSupported: {
+      OutputDebugStringA("Game version is not supported");
+    } return false;
+    
+    default:
+      break;
+  }
+  
   if (!DefineAddresses()) {
     OutputDebugStringA("DefineAddresses failed");
     return false;
@@ -206,13 +293,8 @@ internal bool Initialize()
 BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
 {
   if (reason == DLL_PROCESS_ATTACH) {
-    baseAddress = (void *)GetModuleHandle(baseModuleName);
-    if (!baseAddress) {
-      OutputDebugStringA("GetModuleHandle returned NULL");
-      return FALSE;
-    }
-    
     if (!Initialize()) {
+      assert(false);
       return FALSE;
     }
   }

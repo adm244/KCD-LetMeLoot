@@ -39,18 +39,18 @@ internal GetWHStaticsBundle_t GetWHStaticsBundle = 0;
 
 //------------- Enumerables -------------//
 enum InventoryMode {
-  E_IM_Player = 0,
-  E_IM_Map = 1,
-  E_IM_Store = 2,
-  E_IM_QuestReward = 3,
-  E_IM_QuestDelivery = 4,
-  E_IM_Loot = 5,
-  E_IM_Shop = 6,
-  E_IM_Pickpocket = 7,
-  E_IM_StoreReadOnly = 8,
-  E_IM_Filter = 10,
-  E_IM_Repair = 11,
-  E_IM_Sharpening = 14
+  E_IM_Player = 0, // Player inventory
+  E_IM_Map = 1, // Map screen
+  E_IM_Store = 2, // Opening a container
+  E_IM_QuestReward = 3, // Haven't seen yet
+  E_IM_QuestDelivery = 4, // A gift, etc...
+  E_IM_Loot = 5, // Looting a body
+  E_IM_Shop = 6, // Trading screen
+  E_IM_Pickpocket = 7, // Not used ?
+  E_IM_StoreReadOnly = 8, // Used in a LUA script, but haven't seen yet
+  E_IM_Filter = 10, // Droping in a pot, etc...
+  E_IM_Repair = 11, // Repair screen
+  E_IM_Sharpening = 14 // Sharpening mini-game
 };
 
 //------------- Structures -------------//

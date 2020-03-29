@@ -34,9 +34,19 @@ external void *NotifyInventoryClosed_Address = 0;
 external void OpenInventory_Hook();
 external void NotifyInventoryClosed_Hook();
 
+internal INLINE bool IsPlayer(C_Actor *actor)
+{
+  //NOTE(adm244): there's probably a boolean that tells us if actor is player
+  return (strcmp(actor->vtable->GetClassName(actor), "C_Player") == 0);
+}
+
 external void FASTCALL C_UIMenuEvents_OpenInventory
 (C_UIMenuEvents *ptr, C_Actor *actor, InventoryMode mode)
 {
+  if (!IsPlayer(actor)) {
+    return;
+  }
+  
   switch (mode) {
     case E_IM_Loot:
     case E_IM_Filter:

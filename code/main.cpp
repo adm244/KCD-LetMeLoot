@@ -110,6 +110,8 @@ OTHER DEALINGS IN THE SOFTWARE.
       which is inherited from "C_Actor"
     So that check is simply done by comparing vftables or RTTI info
     
+    There's also "I_Actor::GetClassName" virtual function (0x298) that return a class name string
+    
     We should ignore E_IM_Player, E_IM_Map since WH manipulates with "t_GameScale" on them
     
     We can also use padding in "C_UIMenuEvents" at [0x6A-0x6F] (6 bytes) to store our data

@@ -28,12 +28,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _NATIVE_TYPES_H_
 #define _NATIVE_TYPES_H_
 
+struct C_Actor;
 struct WHStaticsBundle;
 struct CCryAction;
 
 //------------- Functions -------------//
 typedef WHStaticsBundle * (FASTCALL *GetWHStaticsBundle_t)();
 typedef CCryAction * (FASTCALL *CCryAction_PauseGame_t)(CCryAction *ptr, bool pause, int channel, int unk04);
+typedef char * (FASTCALL *C_Actor_GetClassName_t)(C_Actor *ptr);
 
 internal GetWHStaticsBundle_t GetWHStaticsBundle = 0;
 
@@ -60,8 +62,13 @@ struct C_UIMenuEvents {
   void *vtable;
 };
 
+struct C_Actor_VFTable {
+  u8 unk00[0x298];
+  C_Actor_GetClassName_t GetClassName; // 0x298
+};
+
 struct C_Actor {
-  void *vtable;
+  C_Actor_VFTable *vtable;
 };
 
 struct CCryActionVFTable {

@@ -21,10 +21,11 @@ Check [NexusMods page](https://www.nexusmods.com/kingdomcomedeliverance/mods/972
 * 1.9.4 (build 404-502)
 * 1.9.3 (build 404-501)
 * 1.9.2 (build 404S)
+
 No support for 1.9.1 and everything older.
-Only tested on GOG version.
 
 ## Notes
+* Only tested on GOG version.
 * DLL injector is **NOT** included in this repository
 * No fool-proof checks, make sure you know what you're doing
 

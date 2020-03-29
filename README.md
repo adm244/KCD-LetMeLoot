@@ -10,7 +10,7 @@ There are a number of "OpenInventory" modes, this mod applies to these:
 * E_IM_Filter
 
 ## Compilation
-Compilation is done as a **single unit**, just compile **main.cpp** and it should work.
+Compilation is done as a **single unit**, just compile **main.cpp**, assemble **hooks.asm** and link with it.
 For more details see `tools/build.bat` file.
 
 ## Installation

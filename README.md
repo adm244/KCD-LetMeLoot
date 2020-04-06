@@ -17,6 +17,8 @@ For more details see `tools/build.bat` file.
 Check [NexusMods page](https://www.nexusmods.com/kingdomcomedeliverance/mods/972) for details.
 
 ## Supported versions
+
+**GOG**
 * 1.9.5 (build 404-503)
 * 1.9.4 (build 404-502)
 * 1.9.3 (build 404-501)
@@ -24,8 +26,12 @@ Check [NexusMods page](https://www.nexusmods.com/kingdomcomedeliverance/mods/972
 
 No support for 1.9.1 and everything older.
 
+**STEAM**
+* 1.9.5 (build 404-503)
+
+No support for 1.9.4 and everything older.
+
 ## Notes
-* Only tested on GOG version.
 * DLL injector is **NOT** included in this repository
 * No fool-proof checks, make sure you know what you're doing
 

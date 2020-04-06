@@ -4,7 +4,7 @@ REM https://github.com/adm244/cdev
 
 SETLOCAL
 REM [customize those variables]
-SET libs=kernel32.lib version.lib
+SET libs=kernel32.lib
 SET files=%source%\main.cpp
 SET libname=letmeloot
 SET common=%source%\common

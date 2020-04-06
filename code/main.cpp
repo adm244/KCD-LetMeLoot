@@ -137,30 +137,27 @@ OTHER DEALINGS IN THE SOFTWARE.
     We probably have to store some info in "C_UIMenuEvents" so we know should we unpause or not
 */
 
+/*
+  TODO:
+    - a proper loggin system
+    - support more steam versions
+    - support more platforms?
+*/
+
 #include <windows.h>
+#include <stdio.h>
 #include <assert.h>
-#include <malloc.h>
 
 #include "types.h"
+#include "cfg_parser.h"
 #include "detours.cpp"
 
 internal char *baseModuleName = "whgame.dll";
 external void *baseAddress = 0;
 
+#include "wh_version.h"
 #include "native_types.h"
 #include "hooks.cpp"
-
-enum GameVersion {
-  Game_Unknown = 0,
-  Game_NotSupported,
-  Game_194,
-  Game_193,
-  Game_192,
-  //Game_191_390CC,
-  //Game_190
-};
-
-internal GameVersion gameVersion = Game_Unknown;
 
 internal INLINE void * RVA(u64 offset)
 {
@@ -171,9 +168,10 @@ internal INLINE void * RVA(u64 offset)
   return (void *)((u64)baseAddress + offset);
 }
 
-internal bool DefineAddresses()
+internal bool DefinePointers_GOG()
 {
-  switch (gameVersion) {
+  switch (g_GameInfo.version) {
+    case Game_195:
     case Game_194: {
       GetWHStaticsBundle = (GetWHStaticsBundle_t)RVA(0x007D7B2C);
       OpenInventory_Address = RVA(0x008C7F8C);
@@ -196,10 +194,56 @@ internal bool DefineAddresses()
       return false;
   }
   
+  return true;
+}
+
+internal bool DefinePointers_STEAM()
+{
+  switch (g_GameInfo.version) {
+    case Game_195: {
+      GetWHStaticsBundle = (GetWHStaticsBundle_t)RVA(0x008F7FCC);
+      OpenInventory_Address = RVA(0x0092E130);
+      NotifyInventoryClosed_Address = RVA(0x0092C078);
+    } break;
+    
+    //NOTE(adm244): would be nice to get our hands on older steam versions also
+    
+    default:
+      return false;
+  }
+  
+  return true;
+}
+
+internal bool DefinePointers()
+{
+  bool defined = false;
+  
+  switch (g_GameInfo.platform) {
+    case Platform_GOG: {
+      defined = DefinePointers_GOG();
+    } break;
+    
+    case Platform_STEAM: {
+      defined = DefinePointers_STEAM();
+    } break;
+    
+    default: {
+      OutputDebugStringA("DefinePointers: Cannot define pointers for unknown platform");
+    } return false;
+  }
+  
+  if (!defined) {
+    OutputDebugStringA("DefinePointers: Game version is not supported");
+    return false;
+  }
+  
   if (!GetWHStaticsBundle)
     return false;
+  
   if (!OpenInventory_Address)
     return false;
+  
   if (!NotifyInventoryClosed_Address)
     return false;
   
@@ -219,73 +263,26 @@ internal bool InjectHooks()
   return true;
 }
 
-internal GameVersion GetGameVersion()
-{
-  GameVersion result = Game_Unknown;
-  
-  const char *filename = "KingdomCome.exe";
-  u32 infoSize = GetFileVersionInfoSizeA(filename, 0);
-  if (infoSize > 0) {
-    void *buffer = 0;
-    
-    __try { buffer = _alloca(infoSize); }
-    __except(GetExceptionCode() == STATUS_STACK_OVERFLOW) {
-      return result;
-    }
-    
-    char *productVersion = 0;
-    UINT productVersionSize = 0;
-    if (GetFileVersionInfoA(filename, 0, infoSize, buffer)) {
-      //FIX(adm244): search for all available lang pages, not just "000904b0", whatever that is
-      if (VerQueryValueA(buffer, TEXT("\\StringFileInfo\\000904b0\\ProductVersion"), (void **)&productVersion, &productVersionSize)) {
-        //NOTE(adm244): WH forgot to change product version for 1.9.5, so it's shown as 1.9.4
-        // not a big deal here, since RVA's are identical
-        if (strcmp(productVersion, "1.9.4.0") == 0) {
-          result = Game_194;
-        } else if (strcmp(productVersion, "1.9.3.0") == 0) {
-          result = Game_193;
-        } else if (strcmp(productVersion, "1.9.0.0") == 0) {
-          //NOTE(adm244): yeah, they forgot to change it, again...
-          // this time RVA's are different, oh well...
-          result = Game_192;
-        }
-      }
-    }
-  }
-  
-  assert(result != Game_Unknown);
-  return result;
-}
-
 internal bool Initialize()
 {
   baseAddress = (void *)GetModuleHandle(baseModuleName);
   if (!baseAddress) {
-    OutputDebugStringA("GetModuleHandle returned NULL");
+    OutputDebugStringA("Initialize: GetModuleHandle returned NULL");
     return false;
   }
   
-  gameVersion = GetGameVersion();
-  switch (gameVersion) {
-    case Game_Unknown: {
-      OutputDebugStringA("Unknown game version");
-    } return false;
-    
-    case Game_NotSupported: {
-      OutputDebugStringA("Game version is not supported");
-    } return false;
-    
-    default:
-      break;
+  if (!IsSupportedVersion()) {
+    OutputDebugStringA("Initialize: This game version is not supported");
+    return false;
   }
   
-  if (!DefineAddresses()) {
-    OutputDebugStringA("DefineAddresses failed");
+  if (!DefinePointers()) {
+    OutputDebugStringA("Initialize: DefinePointers failed");
     return false;
   }
   
   if (!InjectHooks()) {
-    OutputDebugStringA("InjectHooks failed");
+    OutputDebugStringA("Initialize: InjectHooks failed");
     return false;
   }
   

@@ -28,8 +28,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define internal static
 
-#ifndef arraysize
-#define arraysize(a) (sizeof(a)/sizeof(a[0]))
+#ifndef arraycount
+#define arraycount(a) (sizeof(a)/sizeof(a[0]))
 #endif
 
 #ifndef offsetof
@@ -54,6 +54,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 #define assert_size(obj, size) static_assert(sizeof(obj) == size, "Size of " #obj " should be " #size)
+
+#define KB(n) (n * 1024)
+#define MB(n) (KB(n) * 1024)
+#define GB(n) (MB(n) * 1024)
 
 typedef char i8;
 typedef short i16;

@@ -41,6 +41,7 @@ enum PlatformType_e {
 enum GameVersion_e {
   Game_Unknown = 0,
   Game_NotSupported,
+  Game_196,
   Game_195,
   Game_194,
   Game_193,
@@ -114,6 +115,10 @@ internal GameVersion_e GetGameVersion()
   
   u32 version_binary = GetGameVersionNumber();
   switch (version_binary) {
+    case MAKE_VERSION(1,9,6): {
+      result = Game_196;
+    } break;
+    
     case MAKE_VERSION(1,9,5): {
       result = Game_195;
     } break;

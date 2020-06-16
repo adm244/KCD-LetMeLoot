@@ -171,6 +171,7 @@ internal INLINE void * RVA(u64 offset)
 internal bool DefinePointers_GOG()
 {
   switch (g_GameInfo.version) {
+    case Game_196:
     case Game_195:
     case Game_194: {
       GetWHStaticsBundle = (GetWHStaticsBundle_t)RVA(0x007D7B2C);
@@ -200,6 +201,7 @@ internal bool DefinePointers_GOG()
 internal bool DefinePointers_STEAM()
 {
   switch (g_GameInfo.version) {
+    case Game_196:
     case Game_195: {
       GetWHStaticsBundle = (GetWHStaticsBundle_t)RVA(0x008F7FCC);
       OpenInventory_Address = RVA(0x0092E130);

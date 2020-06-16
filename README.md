@@ -19,6 +19,7 @@ Check [NexusMods page](https://www.nexusmods.com/kingdomcomedeliverance/mods/972
 ## Supported versions
 
 **GOG**
+* 1.9.6 (build 404-504)
 * 1.9.5 (build 404-503)
 * 1.9.4 (build 404-502)
 * 1.9.3 (build 404-501)
@@ -27,6 +28,7 @@ Check [NexusMods page](https://www.nexusmods.com/kingdomcomedeliverance/mods/972
 No support for 1.9.1 and everything older.
 
 **STEAM**
+* 1.9.6 (build 404-504)
 * 1.9.5 (build 404-503)
 
 No support for 1.9.4 and everything older.
